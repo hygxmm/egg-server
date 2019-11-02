@@ -23,7 +23,7 @@ module.exports = app => {
         },
         // 手机号
         mobile: {
-            type: Number,
+            type: String,
             index: true,
             unique: true,
             match: /^1(3|4|5|6|7|8|9)\d{9}$/,
@@ -36,5 +36,5 @@ module.exports = app => {
             default: ''
         },
     });
-    return mongoose.model('User', UserSchema, 'user');
+    return mongoose.model('User', UserSchema);
 }

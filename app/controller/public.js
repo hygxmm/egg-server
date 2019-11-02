@@ -2,7 +2,7 @@ const Controller = require('egg').Controller;
 const fs = require('mz/fs');
 const jwt = require('jsonwebtoken');
 const assert = require('assert');
-const crypto = require('crypto').createHash("md5");
+const crypto = require('crypto');
 
 class PublicController extends Controller {
     // 注册
@@ -13,7 +13,7 @@ class PublicController extends Controller {
         assert(password, '密码不能为空');
         const user = await ctx.service.public.findUserByMobile(mobile);
         assert(!user, '该用户名已存在');
-        const hash = crypto.update(password).digest(config.secret);
+        const hash = crypto.createHmac("sha256", config.secret).update(password).digest("base64");
         const newUser = await ctx.service.public.createUser(mobile, hash);
         if (newUser) {
             ctx.body = {
@@ -40,61 +40,25 @@ class PublicController extends Controller {
         const { mobile, password } = ctx.request.body;
         assert(mobile, '手机号不能为空');
         assert(password, '密码不能为空');
-        const user = await ctx.model.User.findOne({ mobile });
+        const user = await ctx.service.public.findUserByMobile(mobile);
         assert(user, '未找到此用户');
-        const hash = crypto.update(password).digest(config.secret);
-        console.log(hash)
-        // if (user.password === hash) {
-        //     console.log("密码正确")
-        // } else {
-        //     console.log("无法比对")
-        // }
-
-
-
-        // jwt.sign(mobile, app.config.jwt.secret, { expiresIn: '7d' })
-
-
-
-        // assert(user, '该用户不存在')
-        // const isPasswordCorrect = bcrypt.compareSync(password, user.password);
-        // assert(isPasswordCorrect, '密码错误')
-        // user.lastLoginTime = Date.now()
-        // await user.save()
-        // //查找与此用户相关联的群组
-        // const groups = await Group.find({ members: user }, { _id: 1, name: 1, avatar: 1, creator: 1, createTime: 1 })
-        // //查找与此用户相关联的好友
-        // const friends = await Friend.find({ from: user._id }).populate('from', { avatar: 1, username: 1 });
-        // //生成 token
-        // const token = generateToken(user._id);
-        // ctx.cookies.set('SESSION', token, {
-        //     domain: 'localhost',
-        //     path: '/',
-        //     maxAge: config.tokenExpiresTime,
-        //     httpOnly: true,
-        //     overwrite: false
-        // })
-        // ctx.body = {
-        //     success: true,
-        //     message: '登录成功',
-        //     data: {
-        //         _id: user._id,
-        //         token: token,
-        //         avatar: user.avatar,
-        //         username: user.username,
-        //         groups,
-        //         friends
-        //     }
-        // }
-
-
-
-
-
-
-
-
-        ctx.body = 'hi, egg';
+        const hash = crypto.createHmac("sha256", config.secret).update(password).digest("base64");
+        if (user.password === hash) {
+            await ctx.service.public.updateUser([{ 'lastLoginTime': Date.now() }]);
+            // //生成 token
+            const token = jwt.sign({ uid: user._id }, config.jwt.secret, { expiresIn: '7d' })
+            ctx.body = {
+                code: 0,
+                message: '登录成功',
+                data: { token }
+            }
+        } else {
+            ctx.body = {
+                code: 1,
+                msg: '账号或密码错误',
+                data: null,
+            }
+        }
     }
     // 重置密码
     async forgetPassword() {
@@ -103,20 +67,36 @@ class PublicController extends Controller {
     }
     // 获取用户信息
     async getUser() {
-        const { ctx } = this;
-        const { token } = ctx.query; // get 获取参数
-
-
-        ctx.body = 'hi, egg';
-        ctx.status = 200;
+        const { ctx, config } = this;
+        const token = ctx.get('Token');
+        var decoded = jwt.verify(token, config.jwt.secret);
+        try {
+            const user = await ctx.service.public.findUserById(decoded.uid);
+            if (user) {
+                ctx.body = {
+                    code: 0,
+                    msg: '查询成功',
+                    data: user
+                }
+            } else {
+                ctx.body = {
+                    code: 1,
+                    msg: '查询失败',
+                    data: null
+                }
+            }
+        } catch (error) {
+            ctx.body = {
+                code: 1,
+                msg: 'token不合法',
+                data: null
+            }
+        }
     }
     // 修改用户信息
     async editUser() {
         const { ctx } = this;
         const { } = ctx.request.body; // post 获取参数
-
-
-
         ctx.body = 'hi, egg';
     }
     // 上传图片(支持多图上传)
