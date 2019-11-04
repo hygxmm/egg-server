@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <title>Document</title>
+</head>
+
+<body>
+    <div>
+        <label>昵称: <input class="name_input" type="text" /></label>
+    </div>
+    <!-- <div>
+        <label>手机号: <input class="mobile_input" type="text" /></label>
+    </div> -->
+    <div>
+        <label>密 码: <input class="password_input" type="password" /></label>
+    </div>
+    <div>
+        <button class="register_button">注册</button>
+        <button class="login_button">登录</button>
+    </div>
+    <script>
+        const _username = document.querySelector('.name_input');
+        const _password = document.querySelector('.password_input');
+        const log = console.log;
+        const socket = io('http://localhost:7001', {
+            query: {
+                room: '/chat',
+            },
+            transports: ['websocket']
+        })
+
+        socket.on('connect', () => {
+            const id = socket.id;
+            log("connect", id, socket);
+            socket.on(id, msg => {
+                log('receive', msg);
+            })
+        })
+
+        socket.on('online', msg => {
+            log('online', msg);
+        })
+
+        socket.on('disconnect', msg => {
+            log('disconnect', msg);
+        })
+
+        socket.on('disconnecting', () => {
+            log('disconnecting')
+        })
+
+        socket.on('error', () => {
+            log('error');
+        })
+
+        document.querySelector('.register_button').addEventListener('click', () => {
+            axios.post('http://localhost:7001/api/public/register', {
+                username: _username.value,
+                password: _password.value
+            })
+                .then(function (response) {
+                    console.log(response);
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+
+        })
+        document.querySelector('.login_button').addEventListener('click', () => { })
+    </script>
+</body>
+
+</html>
