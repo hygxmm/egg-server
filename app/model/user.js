@@ -22,12 +22,12 @@ module.exports = app => {
             default: '',
         },
         // 手机号
-        mobile: {
-            type: String,
-            index: true,
-            unique: true,
-            match: /^1(3|4|5|6|7|8|9)\d{9}$/,
-        },
+        // mobile: {
+        //     type: String,
+        //     index: true,
+        //     unique: true,
+        //     match: /^1(3|4|5|6|7|8|9)\d{9}$/,
+        // },
         // 密码
         password: String,
         // 头像
@@ -35,6 +35,11 @@ module.exports = app => {
             type: String,
             default: ''
         },
+        expressions: [
+            {
+                type: String,
+            },
+        ],
     });
     return mongoose.model('User', UserSchema);
 }

@@ -1,5 +1,6 @@
 const Controller = require('egg').Controller;
 const fs = require('mz/fs');
+const path = require('path');
 const jwt = require('jsonwebtoken');
 const assert = require('assert');
 const crypto = require('crypto');
@@ -120,6 +121,21 @@ class PublicController extends Controller {
             code: 0,
             msg: '上传成功'
         };
+    }
+    // 上传视频
+    async uploadVideo() {
+        const { ctx } = this;
+        console.log("123")
+        let beginTime = new Date();
+        let file = ctx.request.files[0];
+        let _file = fs.readFileSync(file.filepath);
+        fs.writeFileSync(path.join('./', 'test.mp4'), _file);
+        let endTime = new Date();
+        ctx.body = {
+            code: 0,
+            msg: '上传成功',
+            data: endTime - beginTime
+        }
     }
 }
 
